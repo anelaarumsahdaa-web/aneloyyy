@@ -1,0 +1,50 @@
+{% load static %}{% load money %}<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{ title|default:'Dashboard' }} · {{ business.name|default:'AgriBooks' }}</title>
+  <link rel="stylesheet" href="{% static 'accounting/css/app.css' %}">
+  <script src="{% static 'accounting/js/app.js' %}" defer></script>
+</head>
+<body>
+{% with section=request.resolver_match.url_name %}
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="{% url 'dashboard' %}"><span class="brand-mark">✳</span><span>agri<span class="brand-bold">books</span><small>FINANCE & INVENTORY</small></span></a>
+    <div class="company"><div class="avatar">{{ business.name|slice:':1'|upper }}</div><div class="company-info"><strong title="{{ business.name }}">{{ business.name }}</strong><span>{{ business.subtitle|truncatechars:26 }}</span></div><span class="company-arrow">⌄</span></div>
+    <p class="nav-label">OVERVIEW</p>
+    <nav class="side-nav">
+      <a class="{% if section == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}"><span class="nav-ico">▦</span> Dashboard</a>
+    </nav>
+    <p class="nav-label">TRANSAKSI & MASTER</p>
+    <nav class="side-nav">
+      <a class="{% if section == 'journal_list' or section == 'journal_new' or section == 'journal_detail' %}active{% endif %}" href="{% url 'journal_list' %}"><span class="nav-ico">≡</span> Jurnal Umum</a>
+      <a class="{% if section == 'products' or section == 'product_new' or section == 'product_edit' %}active{% endif %}" href="{% url 'products' %}"><span class="nav-ico">◈</span> Produk & Persediaan</a>
+      <a class="{% if section == 'inventory' or section == 'movement_new' %}active{% endif %}" href="{% url 'inventory' %}"><span class="nav-ico">▥</span> Inventory Card</a>
+    </nav>
+    <p class="nav-label">BUKU & LAPORAN</p>
+    <nav class="side-nav">
+      <a class="{% if section == 'ledger' %}active{% endif %}" href="{% url 'ledger' %}"><span class="nav-ico">▧</span> Buku Besar</a>
+      <a class="{% if section == 'adjustment_list' or section == 'adjustment_new' %}active{% endif %}" href="{% url 'adjustment_list' %}"><span class="nav-ico">✎</span> Jurnal Penyesuaian</a>
+      <a class="{% if section == 'subsidiary' %}active{% endif %}" href="{% url 'subsidiary' %}"><span class="nav-ico">◫</span> Buku Besar Pembantu</a>
+      <a class="{% if section == 'trial_balance' %}active{% endif %}" href="{% url 'trial_balance' %}"><span class="nav-ico">▰</span> Neraca Saldo</a>
+      <a class="{% if section == 'worksheet' %}active{% endif %}" href="{% url 'worksheet' %}"><span class="nav-ico">▦</span> Neraca Lajur</a>
+      <a class="{% if section == 'income' %}active{% endif %}" href="{% url 'income' %}"><span class="nav-ico">⌁</span> Laba Rugi</a>
+      <a class="{% if section == 'balance' %}active{% endif %}" href="{% url 'balance' %}"><span class="nav-ico">◩</span> Neraca</a>
+    </nav>
+    <p class="nav-label">PREFERENSI</p>
+    <nav class="side-nav"><a class="{% if section == 'settings' %}active{% endif %}" href="{% url 'settings' %}"><span class="nav-ico">⚙</span> Pengaturan Usaha</a></nav>
+    <div class="sidebar-bottom"><div class="sidebar-help"><span class="help-symbol">✦</span><strong>Data tersinkron otomatis</strong><small>Satu jurnal untuk semua laporan.</small></div></div>
+  </aside>
+  <div class="overlay" id="overlay"></div>
+  <div class="main-area">
+    <header class="topbar"><button class="icon-button mobile-menu" id="menuToggle" aria-label="Buka menu">☰</button><div class="breadcrumbs">Workspace <span>›</span> <b>{{ title|default:'Dashboard' }}</b></div><div class="top-actions"><span class="online"><span class="online-dot"></span> Sistem aktif</span><div class="top-avatar" title="{{ request.user.username }}">{{ request.user.username|slice:':1'|upper }}</div><form action="{% url 'logout' %}" method="post">{% csrf_token %}<button type="submit" class="signout">Keluar ↗</button></form></div></header>
+    <main class="content">
+    {% if messages %}{% for message in messages %}<div class="notice {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>{% endfor %}{% endif %}
+    {% block content %}{% endblock %}
+    </main>
+    <footer class="footer">© {% now 'Y' %} {{ business.name }} <span>Sistem Akuntansi Pertanian · Django</span></footer>
+  </div>
+</div>
+{% endwith %}
+</body></html>

@@ -1,0 +1,32 @@
+AGRIBOOKS | PANDUAN RINGKAS INSTALASI WINDOWS
+===========================================
+1. Instal Python 3.12 atau 3.13, centang 'Add Python to PATH'.
+2. Ekstrak ZIP ini dan buka foldernya di VS Code.
+3. Buka Terminal > New Terminal di VS Code.
+4. Jalankan:
+
+   py -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   pip install -r requirements.txt
+   python manage.py makemigrations accounting
+   python manage.py migrate
+   python manage.py createsuperuser
+   python manage.py seed_agriculture --demo
+   python manage.py runserver
+
+5. Buka http://127.0.0.1:8000/ lalu login.
+6. Menu Pengaturan Usaha untuk mengganti nama usaha.
+7. Gunakan Dashboard > Ekspor Semua Excel untuk mengunduh seluruh laporan.
+
+CATATAN: --demo berisi transaksi simulasi, bukan data nyata.
+Untuk memulai kosong gunakan seed_agriculture TANPA --demo.
+Untuk akun olahraga dari file contoh gunakan seed_reference pada DB kosong,
+BUKAN bersamaan dengan seed_agriculture.
+
+Jika PowerShell menolak aktivasi virtualenv, jalankan dahulu:
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+Baca README.md untuk tutorial lengkap, penjelasan FIFO, batasan aplikasi,
+dan pengujian otomatis.
+
+REVISI: Jurnal Penyesuaian tampil setelah Buku Besar; menu Daftar Akun/Kode disembunyikan; semua ekspor Excel berisi 12 sheet dengan rumus antarsheet. Lihat README.md bagian 5.

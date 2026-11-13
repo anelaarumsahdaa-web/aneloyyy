@@ -1,0 +1,142 @@
+{% extends 'accounting/base.html' %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="eyebrow">{% if journal_type == "penyesuaian" %}PERIOD-END ADJUSTMENT{% else %}DOUBLE ENTRY BOOKKEEPING{% endif %}</div>
+    <h1>{{ title }}</h1>
+    <p>{% if journal_type == "umum" %}Cukup isi keterangan transaksi dan satu nominal. Akun debet/kredit dan nominalnya terisi otomatis; termin, diskon, dan retur ikut dikenali.{% else %}Pilih akun debet, akun kredit, dan nominal untuk jurnal penyesuaian.{% endif %}</p>
+  </div>
+  <a class="btn btn-outline" href="{{ back_url }}">← Kembali</a>
+</div>
+<form method="post" id="journalForm"{% if journal_type == "umum" %} data-preview-url="{% url 'journal_preview' %}"{% endif %}>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="notice error">{{ form.non_field_errors }}</div>{% endif %}
+  {% if formset.non_form_errors %}<div class="notice error">{{ formset.non_form_errors }}</div>{% endif %}
+  <section class="panel form-panel">
+    <h2 class="form-section-title">Informasi Transaksi</h2>
+    <div class="form-grid">
+      {% for field in form %}
+      {% if field.name != 'amount' and field.name != 'term_text' and field.name != 'discount_percent' and field.name != 'discount_rp' and field.name != 'use_term_discount' %}
+      <div class="field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for err in field.errors %}<small class="field-error">{{ err }}</small>{% endfor %}
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+  {% if journal_type == "umum" %}
+  <section class="panel form-panel">
+    <h2 class="form-section-title">Input Transaksi Otomatis</h2>
+    <p>Isi keterangan dan nominal satu kali. Akun serta sisi debet dan kredit terisi otomatis di tabel di bawah selagi Anda mengetik.</p>
+    <div class="form-grid">
+      <div class="field">
+        <label for="{{ form.amount.id_for_label }}">{{ form.amount.label }}</label>
+        {{ form.amount }}
+        {% for err in form.amount.errors %}<small class="field-error">{{ err }}</small>{% endfor %}
+      </div>
+    </div>
+
+    <details class="term-box" {% if form.term_text.value or form.discount_percent.value or form.discount_rp.value or form.use_term_discount.value %}open{% endif %}>
+      <summary>Termin &amp; Diskon <span class="muted-pill">opsional</span></summary>
+      <div class="form-grid" style="margin-top:14px">
+        <div class="field">
+          <label for="{{ form.term_text.id_for_label }}">{{ form.term_text.label }}</label>
+          {{ form.term_text }}
+          <datalist id="termSuggestions">{% for t in term_suggestions %}<option value="{{ t }}">{% endfor %}</datalist>
+          <small class="help-text">{{ form.term_text.help_text }}</small>
+          {% for err in form.term_text.errors %}<small class="field-error">{{ err }}</small>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ form.discount_percent.id_for_label }}">{{ form.discount_percent.label }}</label>
+          {{ form.discount_percent }}
+          {% for err in form.discount_percent.errors %}<small class="field-error">{{ err }}</small>{% endfor %}
+        </div>
+        <div class="field">
+          <label for="{{ form.discount_rp.id_for_label }}">{{ form.discount_rp.label }}</label>
+          {{ form.discount_rp }}
+          {% for err in form.discount_rp.errors %}<small class="field-error">{{ err }}</small>{% endfor %}
+        </div>
+        <div class="field checkbox-field">
+          <label for="{{ form.use_term_discount.id_for_label }}">{{ form.use_term_discount }} {{ form.use_term_discount.label }}</label>
+          <small class="help-text">Dipakai pada “penerimaan piutang” / “pembayaran utang” dengan termin berdiskon, misalnya 2/10,n/30.</small>
+        </div>
+      </div>
+    </details>
+
+    <h3 class="preview-title">Pratinjau jurnal otomatis</h3>
+    <div id="previewMessage" class="notice info" aria-live="polite">Ketik keterangan transaksi untuk melihat akun otomatis.</div>
+    <div class="table-scroll">
+      <table class="data-table" id="previewTable" hidden>
+        <thead><tr><th>Kode</th><th>Nama Akun</th><th>Relasi</th><th class="right">Debet</th><th class="right">Kredit</th></tr></thead>
+        <tbody id="previewBody"></tbody>
+        <tfoot><tr><th colspan="3">TOTAL</th><th class="right money" id="previewTotalDebit">Rp 0</th><th class="right money" id="previewTotalCredit">Rp 0</th></tr></tfoot>
+      </table>
+    </div>
+    <p id="previewMeta" class="muted-line" hidden></p>
+
+    <div class="notice" style="margin-top:14px">
+      <strong>Contoh keterangan yang dikenali:</strong>
+      <ul>
+        <li>Pembelian pupuk tunai · Pembelian bibit kredit (nama produk terdaftar dicatat sebagai persediaan)</li>
+        <li>Penjualan hasil tani tunai · Penjualan hasil tani kredit Pak Budi</li>
+        <li>Penerimaan piutang Pak Budi · Pembayaran utang CV Tani Jaya</li>
+        <li>Retur penjualan kredit Pak Budi · Retur pembelian tunai</li>
+        <li>Pembayaran listrik · Pembayaran upah tenaga kerja</li>
+      </ul>
+      Jika transaksi belum dikenali, sistem meminta keterangan diperjelas dan tidak membuat jurnal dengan akun tebakan.
+      Jurnal umum tidak mengubah kartu stok. Untuk barang yang stoknya dilacak FIFO, gunakan <strong>Inventory Card → Transaksi Stok</strong>.
+    </div>
+    <div class="form-actions">
+      <a href="{{ back_url }}" class="btn btn-outline">Batal</a>
+      <button type="submit" class="btn btn-primary">✓ Simpan Jurnal Otomatis</button>
+    </div>
+  </section>
+  {% else %}
+  <section class="panel form-panel">
+    <div class="panel-header">
+      <div><h2>Rincian Jurnal</h2><p>Setiap baris input otomatis menghasilkan satu baris debet dan satu baris kredit dengan nominal sama.</p></div>
+      <button type="button" id="addLine" class="btn btn-soft">＋ Tambah Pasangan</button>
+    </div>
+    {{ formset.management_form }}
+    <div class="table-scroll">
+      <table class="data-table journal-editor">
+        <thead><tr><th>Akun Debet</th><th>Akun Kredit</th><th>Nominal (Rp)</th><th>Relasi Debet</th><th>Relasi Kredit</th><th>Uraian</th><th>Hapus</th></tr></thead>
+        <tbody id="journalRows">
+          {% for pair in formset.forms %}
+          <tr class="journal-row">
+            <td>{{ pair.debit_account }}{{ pair.debit_account.errors }}</td>
+            <td>{{ pair.credit_account }}{{ pair.credit_account.errors }}</td>
+            <td>{{ pair.amount }}{{ pair.amount.errors }}</td>
+            <td>{{ pair.debit_party }}{{ pair.debit_party.errors }}</td>
+            <td>{{ pair.credit_party }}{{ pair.credit_party.errors }}</td>
+            <td>{{ pair.description }}{{ pair.description.errors }}</td>
+            <td class="remove-cell">{{ pair.DELETE }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <template id="journalEmptyRow"><tr class="journal-row">
+      <td>{{ formset.empty_form.debit_account }}</td>
+      <td>{{ formset.empty_form.credit_account }}</td>
+      <td>{{ formset.empty_form.amount }}</td>
+      <td>{{ formset.empty_form.debit_party }}</td>
+      <td>{{ formset.empty_form.credit_party }}</td>
+      <td>{{ formset.empty_form.description }}</td>
+      <td class="remove-cell">{{ formset.empty_form.DELETE }}</td>
+    </tr></template>
+    <div class="journal-totals">
+      <div><span>Total Debet</span><strong id="totalDebit">Rp 0</strong></div>
+      <div><span>Total Kredit</span><strong id="totalCredit">Rp 0</strong></div>
+      <div><span>Selisih</span><strong id="journalDifference">Rp 0</strong></div>
+    </div>
+    <div class="form-actions">
+      <a href="{{ back_url }}" class="btn btn-outline">Batal</a>
+      <button type="submit" class="btn btn-primary">✓ Simpan Jurnal</button>
+    </div>
+  </section>
+  {% endif %}
+</form>
+{% endblock %}
